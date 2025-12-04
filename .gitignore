@@ -1,0 +1,105 @@
+# ============================
+# Global / OS
+# ============================
+.DS_Store
+Thumbs.db
+*.log
+
+# ============================
+# Python
+# ============================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+*.whl
+
+# PyInstaller
+*.spec
+
+# Testing
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Django / Flask / FastAPI
+*.log
+local_settings.py
+instance/
+.webassets-cache
+
+# Mypy / Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+.pyre/
+
+# ============================
+# Node / React
+# ============================
+
+# Dependencies
+node_modules/
+
+# Build outputs
+build/
+dist/
+out/
+.next/
+.vercel/
+
+# React specific
+*.cache
+.cache/
+*.tsbuildinfo
+
+# Environment variables
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ============================
+# IDE & Editors
+# ============================
+
+# VS Code
+.vscode/
+.history/
+
+# JetBrains
+.idea/
+*.iml
+
+# ============================
+# Misc
+# ============================
+# Local env files
+*.env
+*.pid
