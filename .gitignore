@@ -103,3 +103,6 @@ out/
 # Local env files
 *.env
 *.pid
+
+# ============================
+trial.py
