@@ -1,6 +1,8 @@
 
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Layout from './components/ui/Layout';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -19,6 +21,7 @@ function App() {
           <Route path="*" element={<Navigate to="/common-chat" replace />} />
         </Routes>
       </Layout>
+      <ToastContainer position="top-right" autoClose={3000} />
     </Router>
   );
 }
