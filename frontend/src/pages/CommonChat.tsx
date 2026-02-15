@@ -2,8 +2,10 @@ import { useState, useRef } from 'react';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Send, Paperclip, X, FileText, Image as ImageIcon } from 'lucide-react';
+import { useSocket } from '../context/SocketContext';
 
 const CommonChat = () => {
+    const { socket, isConnected } = useSocket();
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
