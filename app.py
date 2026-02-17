@@ -5,7 +5,7 @@ import uuid
 
 app = Flask(__name__)
 app.secret_key = "Digital_Sorcerer"
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 def Database():
     conn = sqlite3.connect('users.db')
