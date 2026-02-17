@@ -83,6 +83,10 @@ def signup():
 def handle_connect():
     emit('connection_established', {'data': 'Connected to server'})
 
+@socketio.on('message')
+def handle_message(data):
+    emit('message', data, broadcast=True)
+
 @socketio.on('disconnect')
 def handle_disconnect():
     emit('disconnection_established', {'data': 'Disconnected from server'})
