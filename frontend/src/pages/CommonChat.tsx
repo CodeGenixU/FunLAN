@@ -1,13 +1,65 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Send, Paperclip, X, FileText, Image as ImageIcon } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 
+
 const CommonChat = () => {
     const { socket, isConnected } = useSocket();
+    const [messages, setMessages] = useState<any[]>([]);
+    const [inputMessage, setInputMessage] = useState('');
+    const [username, setUsername] = useState<string>('');
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const storedUsername = localStorage.getItem('username');
+        if (storedUsername) {
+            setUsername(storedUsername);
+        } else {
+            // navigate('/login'); // Or handle anonymous
+            setUsername(`Anonymous-${Math.floor(Math.random() * 1000)}`);
+        }
+
+        if (socket) {
+            socket.on('message', (message: any) => {
+
+                setMessages((prev) => [...prev, message]);
+            });
+        }
+        return () => {
+            if (socket) {
+                socket.off('message');
+            }
+        }
+    }, [socket]);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
+
+    const handleSendMessage = () => {
+        if (inputMessage.trim() || selectedFiles.length > 0) {
+            const messageData = {
+                username: username,
+                text: inputMessage,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+
+            };
+            socket?.emit('message', messageData);
+            setInputMessage('');
+            setSelectedFiles([]);
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            handleSendMessage();
+        }
+    };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -47,33 +99,46 @@ const CommonChat = () => {
                     </span>
                 </div>
 
-                {/* Received Message */}
-                <div className="flex gap-3 max-w-[80%]">
-                    <div className="w-8 h-8 rounded-full bg-accent flex-shrink-0 shadow-sm" />
-                    <div className="space-y-1">
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-sm font-semibold">Alice</span>
-                            <span className="text-xs text-muted-foreground">10:30 AM</span>
-                        </div>
-                        <div className="p-3 bg-card/50 backdrop-blur-sm border border-white/5 rounded-2xl rounded-tl-none text-sm shadow-sm">
-                            <p>Hey everyone! Welcome to the common chat.</p>
-                        </div>
-                    </div>
-                </div>
+                {messages.map((msg, index) => {
+                    const isMyMessage = msg.username === username;
 
-                {/* Sent Message */}
-                <div className="flex gap-3 max-w-[80%] ml-auto flex-row-reverse">
-                    <div className="w-8 h-8 rounded-full bg-primary flex-shrink-0 shadow-sm" />
-                    <div className="space-y-1">
-                        <div className="flex items-baseline gap-2 justify-end">
-                            <span className="text-sm font-semibold">You</span>
-                            <span className="text-xs text-muted-foreground">10:32 AM</span>
+                    return (
+                        <div
+                            key={index}
+                            className={`flex w-full ${isMyMessage ? 'justify-end' : 'justify-start'}`}
+                        >
+                            <div className="max-w-[75%]">
+                                {/* Show username ONLY for others */}
+                                {!isMyMessage && (
+                                    <span className="text-xs text-muted-foreground ml-2 mb-1 block">
+                                        {msg.username}
+                                    </span>
+                                )}
+
+                                <div
+                                    className={`
+                        px-4 py-2 text-sm leading-relaxed shadow-sm
+                        ${isMyMessage
+                                            ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md'
+                                            : 'bg-white/10 backdrop-blur-sm border border-white/5 rounded-2xl rounded-bl-md'}
+                    `}
+                                >
+                                    {msg.text}
+                                </div>
+
+                                {/* Timestamp subtle + aligned */}
+                                <div
+                                    className={`text-[10px] mt-1 text-muted-foreground ${isMyMessage ? 'text-right mr-1' : 'text-left ml-1'
+                                        }`}
+                                >
+                                    {msg.timestamp}
+                                </div>
+                            </div>
                         </div>
-                        <div className="p-3 bg-primary text-primary-foreground rounded-2xl rounded-tr-none text-sm shadow-sm">
-                            <p>Thanks! Excited to be here.</p>
-                        </div>
-                    </div>
-                </div>
+                    );
+                })}
+
+                <div ref={messagesEndRef} />
             </div>
 
             {/* Input Area */}
@@ -120,8 +185,11 @@ const CommonChat = () => {
                     <Input
                         placeholder="Type a message..."
                         className="flex-1 bg-white/5 border-white/10 focus-visible:ring-1 focus-visible:ring-primary placeholder:text-muted-foreground/50"
+                        value={inputMessage}
+                        onChange={(e) => setInputMessage(e.target.value)}
+                        onKeyDown={handleKeyDown}
                     />
-                    <Button size="icon" className="rounded-full w-10 h-10 shadow-lg">
+                    <Button size="icon" className="rounded-full w-10 h-10 shadow-lg" onClick={handleSendMessage}>
                         <Send size={18} />
                     </Button>
                 </div>

@@ -22,6 +22,7 @@ const Login = () => {
             const response = await api.post('/api/auth', formData);
             if (response.data.status === 'success') {
                 toast.success('Login Successful!');
+                localStorage.setItem('username', response.data.data.username);
                 navigate('/');
             } else {
                 toast.error('Login Failed: ' + (response.data.message || 'Invalid credentials'));
