@@ -1,11 +1,14 @@
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, session, send_from_directory
 from flask_socketio import SocketIO, emit, join_room, disconnect
 import sqlite3
 import os 
+import uuid
 
 app = Flask(__name__)
 app.secret_key = "Digital_Sorcerer"
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+UPLOAD_FOLDER = 'uploads'
 
 def Database():
     conn = sqlite3.connect('users.db')
@@ -56,6 +59,35 @@ def auth():
         conn.close()
         return jsonify({'status': 'Invalid Username', 'data' : {'username': username}}), 400
 
+@app.route("/upload", methods = ['POST'])
+def upload():
+    if 'user_id' not in session:
+        return jsonify({'status':'error', 'message' : 'Not Authenticated'}), 400
+    if 'file' not in request.files:
+        return jsonify({'status':'error', 'message' : 'No file found'}), 400
+    file = request.files['file']
+    filename = uuid.uuid4().hex + os.path.splitext(file.filename)[1]
+    file.save(os.path.join(UPLOAD_FOLDER, filename))
+
+    room = request.form.get('room')
+    timestamp = request.form.get('timestamp')
+    data = {
+        "room": room,
+        "filename": file.filename,
+        "file_id": filename,
+        "user_id": session['user_id'],
+        "username": session['username'],
+        "timestamp": timestamp
+    }
+    socketio.emit('file', data, broadcast=True, room=data['room'])
+    return jsonify({'status':'success', 'data' : data}), 200
+
+@app.route('/download/<filename>', methods = ['GET'])
+def download(filename):
+    if 'user_id' not in session:
+        return jsonify({'status':'error', 'message' : 'Not Authenticated'}), 400
+    return send_from_directory(UPLOAD_FOLDER, filename)
+
 @app.route('/signup', methods = ['POST'])
 def signup():
     data = request.get_json()
@@ -102,4 +134,6 @@ def handle_disconnect():
 if __name__ == '__main__':
     if not os.path.exists('users.db'):
         Database()
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER)
     socketio.run(app, debug=True)
