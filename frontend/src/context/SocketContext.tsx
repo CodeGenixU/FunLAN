@@ -5,6 +5,9 @@ import { io, Socket } from 'socket.io-client';
 interface SocketContextType {
     socket: Socket | null;
     isConnected: boolean;
+    isAuthenticated: boolean;
+    isConnecting: boolean;
+    connectSocket: () => void;
 }
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -20,14 +23,47 @@ export const useSocket = () => {
 export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [socket, setSocket] = useState<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isConnecting, setIsConnecting] = useState(true);
 
-    useEffect(() => {
-        const socketInstance = io('http://localhost:5000');
+    const connectSocket = () => {
+        setIsConnecting(true);
+        if (socket) {
+            socket.disconnect();
+        }
 
-        socketInstance.on('connect', () => setIsConnected(true));
-        socketInstance.on('disconnect', () => setIsConnected(false));
+        const socketInstance = io('http://localhost:5000', {
+            withCredentials: true,
+            autoConnect: false
+        });
+
+        socketInstance.on('connect_error', (err) => {
+            console.error('Socket connect error:', err);
+            setIsAuthenticated(false);
+            setIsConnecting(false);
+        });
+
+        socketInstance.on('connection_established', (data) => {
+            if (data.status === 'success') {
+                setIsAuthenticated(true);
+                setIsConnecting(false);
+                setIsConnected(true);
+            }
+        });
+
+        socketInstance.on('disconnect', () => {
+            setIsConnected(false);
+            // We do not immediately set unauth if it's just a transient disconnect
+        });
 
         setSocket(socketInstance);
+        socketInstance.connect();
+
+        return socketInstance;
+    };
+
+    useEffect(() => {
+        const socketInstance = connectSocket();
 
         return () => {
             socketInstance.disconnect();
@@ -35,7 +71,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }, []);
 
     return (
-        <SocketContext.Provider value={{ socket, isConnected }}>
+        <SocketContext.Provider value={{ socket, isConnected, isAuthenticated, isConnecting, connectSocket }}>
             {children}
         </SocketContext.Provider>
     );

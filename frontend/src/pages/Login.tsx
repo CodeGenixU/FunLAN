@@ -1,16 +1,17 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import api from '../lib/axios';
+import { useSocket } from '../context/SocketContext';
 
 const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const navigate = useNavigate();
+    const { connectSocket } = useSocket();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,7 +24,7 @@ const Login = () => {
             if (response.data.status === 'success') {
                 toast.success('Login Successful!');
                 localStorage.setItem('username', response.data.data.username);
-                navigate('/');
+                connectSocket(); // Manually initiate socket connection; AuthRoute will handle redirect once connected
             } else {
                 toast.error('Login Failed: ' + (response.data.message || 'Invalid credentials'));
             }

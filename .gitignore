@@ -108,3 +108,4 @@ out/
 trial.py
 *.db
 frontend/package-lock.json
+uploads/

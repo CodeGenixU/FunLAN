@@ -38,12 +38,12 @@ def auth():
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
 
-    cursor.execute('SELECT * FROM users WHERE username = ?', (username))
-    user = cursor.fetchone()
+    cursor.execute('SELECT * FROM users WHERE username = ?', (username,)) # , chut gaya tha isliye error aa rha tha
+    user = cursor.fetchone() # Fetch one use kar rahe so tuple hi return hoga
     if user:
-        if user[0][2] != password:
+        if user[2] != password: # isliye ye karne ka jarurat nhi h (user[0][2] != password)
             return jsonify({'status': 'Incorrect Password', 'data' : {'username': username}}), 400
-        user_id = user[0][0]
+        user_id = user[0] # and yaha bhi (user[0][0])
         
         session['user_id'] = user_id
         session['username'] = username
@@ -79,7 +79,7 @@ def upload():
         "username": session['username'],
         "timestamp": timestamp
     }
-    socketio.emit('file', data, broadcast=True, room=data['room'])
+    socketio.emit('file', data, to=data['room'],) # TypeError: Server.emit() got an unexpected keyword argument 'broadcast'
     return jsonify({'status':'success', 'data' : data}), 200
 
 @app.route('/download/<filename>', methods = ['GET'])
@@ -115,6 +115,7 @@ def handle_connect():
 def handle_message(data):
     if 'user_id' not in session:
         disconnect()
+        print("User not authenticated")
         return
     
     data = {
