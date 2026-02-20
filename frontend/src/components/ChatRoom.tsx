@@ -177,7 +177,7 @@ const ChatRoom = ({ roomId, title, subtitle, avatarInitials = '#' }: ChatRoomPro
                         onKeyDown={handleKeyDown}
                         disabled={selectedFiles.length > 0}
                     />
-                    <Button size="icon" className="rounded-full w-10 h-10 shadow-lg" onClick={handleSendMessage}>
+                    <Button size="icon" className="rounded-full w-10 h-10 shadow-lg text-foreground/90 hover:text-foreground" onClick={handleSendMessage}>
                         <Send size={18} />
                     </Button>
                 </div>

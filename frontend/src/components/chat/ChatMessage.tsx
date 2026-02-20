@@ -39,7 +39,7 @@ export const ChatMessage = ({ msg, isMyMessage }: ChatMessageProps) => {
                         text-sm leading-relaxed shadow-sm
                         hover:bg-primary/90 transition duration-200
                         ${isMyMessage
-                            ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md'
+                            ? 'bg-primary rounded-2xl rounded-br-md'
                             : 'bg-white/10 backdrop-blur-sm border border-white/5 rounded-2xl rounded-bl-md'}
                         ${isMedia ? 'p-1' : 'px-4 py-2'}
                     `}
