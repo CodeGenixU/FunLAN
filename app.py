@@ -161,6 +161,21 @@ def handle_message(data):
     
     emit('message', data, broadcast=True, room=data['room'])
 
+@socketio.on('typing')
+def handle_typing(data):
+    if 'user_id' not in session:
+        return
+        
+    room = data.get('room')
+    is_typing = data.get('isTyping')
+    
+    emit('typing', {
+        'room': room,
+        'user_id': session['user_id'],
+        'username': session['username'],
+        'isTyping': is_typing
+    }, room=room, include_self=False)
+
 @socketio.on('disconnect')
 def handle_disconnect():
     session_id = request.sid

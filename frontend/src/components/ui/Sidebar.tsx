@@ -17,7 +17,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
     const location = useLocation();
     const [activeTab, setActiveTab] = useState<'chats' | 'settings'>('chats');
-    const { commonChat, personalChats } = useChat();
+    const { commonChat, personalChats, typingUsers } = useChat();
 
     return (
         <aside
@@ -104,7 +104,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed })
                                                 {commonChat.name}
                                             </h3>
                                             <p className="text-sm text-muted-foreground truncate">
-                                                {commonChat.lastMessage}
+                                                {typingUsers?.['global']?.length ? (
+                                                    <span className="text-primary italic animate-pulse">
+                                                        {typingUsers['global'].length > 1
+                                                            ? 'several people typing...'
+                                                            : `${typingUsers['global'][0]} is typing...`}
+                                                    </span>
+                                                ) : (
+                                                    commonChat.lastMessage
+                                                )}
                                             </p>
                                         </div>
                                         <div className="flex flex-col items-end gap-1 flex-shrink-0">
@@ -156,7 +164,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed })
                                                     {chat.name}
                                                 </h3>
                                                 <p className="text-sm text-muted-foreground truncate">
-                                                    {chat.lastMessage}
+                                                    {typingUsers?.[chat.roomId]?.length ? (
+                                                        <span className="text-primary italic animate-pulse">Typing...</span>
+                                                    ) : (
+                                                        chat.lastMessage
+                                                    )}
                                                 </p>
                                             </div>
                                             <div className="flex flex-col items-end gap-1 flex-shrink-0">

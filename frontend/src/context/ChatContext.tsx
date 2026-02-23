@@ -19,6 +19,7 @@ interface ChatContextType {
     commonChat: ChatData;
     personalChats: ChatData[];
     clearUnread: (roomId: string) => void;
+    typingUsers: Record<string, string[]>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -51,6 +52,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const [commonChat, setCommonChat] = useState<ChatData>(INITIAL_COMMON);
     const [personalChats, setPersonalChats] = useState<ChatData[]>(INITIAL_PERSONAL);
+    const [typingUsers, setTypingUsers] = useState<Record<string, string[]>>({});
 
     const formatUserChat = (user: { user_id: number; username: string }): ChatData => ({
         id: user.user_id,
@@ -159,6 +161,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 setCommonChat(prev => ({
                     ...prev,
                     lastMessage: messageText,
+
                     time: timeString,
                     unread: isViewingRoom ? 0 : prev.unread + 1
                 }));
@@ -175,6 +178,25 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     return chat;
                 }));
             }
+        };
+
+        const handleTyping = (data: any) => {
+            let room = data.room || 'global';
+            room = processMessageRoom(room, data.user_id);
+            const isTyping = data.isTyping;
+            const username = data.username;
+
+            setTypingUsers(prev => {
+                const roomTyping = prev[room] || [];
+                if (isTyping) {
+                    if (!roomTyping.includes(username)) {
+                        return { ...prev, [room]: [...roomTyping, username] };
+                    }
+                } else {
+                    return { ...prev, [room]: roomTyping.filter(u => u !== username) };
+                }
+                return prev;
+            });
         };
 
         const onMessage = (msg: any) => {
@@ -197,17 +219,19 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         socket.on('disconnection_established', handleUserLeft);
         socket.on('message', onMessage);
         socket.on('file', onFile);
+        socket.on('typing', handleTyping);
 
         return () => {
             socket.off('user_joined', handleUserJoined);
             socket.off('disconnection_established', handleUserLeft);
             socket.off('message', onMessage);
             socket.off('file', onFile);
+            socket.off('typing', handleTyping);
         };
     }, [socket, location.pathname]);
 
     return (
-        <ChatContext.Provider value={{ commonChat, personalChats, clearUnread }}>
+        <ChatContext.Provider value={{ commonChat, personalChats, clearUnread, typingUsers }}>
             {children}
         </ChatContext.Provider>
     );

@@ -4,6 +4,7 @@ import { Button } from './ui/Button';
 import { Send, Paperclip, X, FileText, Image as ImageIcon } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 import { useMessage } from '../context/MessageContext';
+import { useChat } from '../context/ChatContext';
 import api from '../lib/axios';
 import { ChatMessage } from './chat/ChatMessage';
 
@@ -17,11 +18,16 @@ interface ChatRoomProps {
 const ChatRoom = ({ roomId, title, subtitle, avatarInitials = '#' }: ChatRoomProps) => {
     const { socket } = useSocket();
     const { getMessages, addMessage } = useMessage();
+    const { typingUsers } = useChat();
 
     const messages = getMessages(roomId);
 
     const [inputMessage, setInputMessage] = useState('');
     const [username, setUsername] = useState<string>('');
+    const [isTyping, setIsTyping] = useState(false);
+    const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const currentRoomTyping = (typingUsers?.[roomId] || []).filter(u => u !== username);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -38,7 +44,7 @@ const ChatRoom = ({ roomId, title, subtitle, avatarInitials = '#' }: ChatRoomPro
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+    }, [messages, currentRoomTyping]);
 
     const handleSendMessage = async () => {
         if (selectedFiles.length > 0) {
@@ -76,6 +82,39 @@ const ChatRoom = ({ roomId, title, subtitle, avatarInitials = '#' }: ChatRoomPro
                 addMessage(roomId, messageData);
             }
             setInputMessage('');
+        }
+        if (isTyping) {
+            setIsTyping(false);
+            socket?.emit('typing', { room: roomId, isTyping: false });
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        }
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setInputMessage(val);
+
+        if (selectedFiles.length > 0) return;
+
+        if (!isTyping && val.trim().length > 0) {
+            setIsTyping(true);
+            socket?.emit('typing', { room: roomId, isTyping: true });
+        } else if (val.trim().length === 0 && isTyping) {
+            setIsTyping(false);
+            socket?.emit('typing', { room: roomId, isTyping: false });
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            return;
+        }
+
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+
+        if (val.trim().length > 0) {
+            typingTimeoutRef.current = setTimeout(() => {
+                setIsTyping(false);
+                socket?.emit('typing', { room: roomId, isTyping: false });
+            }, 2000);
         }
     };
 
@@ -137,6 +176,23 @@ const ChatRoom = ({ roomId, title, subtitle, avatarInitials = '#' }: ChatRoomPro
                     );
                 })}
 
+                {currentRoomTyping.length > 0 && (
+                    <div className="flex items-center gap-2 mb-2 px-2 text-muted-foreground text-xs italic">
+                        <div className="flex gap-1 h-3 items-center">
+                            <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                            <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                            <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce"></span>
+                        </div>
+                        {!roomId.startsWith('user:') && (
+                            <span>
+                                {currentRoomTyping.length > 1
+                                    ? 'several people typing...'
+                                    : `${currentRoomTyping[0]} is typing...`}
+                            </span>
+                        )}
+                    </div>
+                )}
+
                 <div ref={messagesEndRef} />
             </div>
 
@@ -187,7 +243,7 @@ const ChatRoom = ({ roomId, title, subtitle, avatarInitials = '#' }: ChatRoomPro
                         placeholder="Type a message..."
                         className="flex-1 bg-white/5 border-white/10 focus-visible:ring-1 focus-visible:ring-primary placeholder:text-muted-foreground/50 disabled:opacity-50"
                         value={inputMessage}
-                        onChange={(e) => setInputMessage(e.target.value)}
+                        onChange={handleInputChange}
                         onKeyDown={handleKeyDown}
                         disabled={selectedFiles.length > 0}
                     />
