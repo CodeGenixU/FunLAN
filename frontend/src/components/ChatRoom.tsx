@@ -107,21 +107,27 @@ const ChatRoom = ({ roomId, title, subtitle, avatarInitials = '#' }: ChatRoomPro
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col">
                 {/* System Message */}
-                <div className="flex justify-center">
+                <div className="flex justify-center mb-6">
                     <span className="bg-white/10 backdrop-blur-sm text-xs py-1 px-3 rounded-full text-muted-foreground border border-white/5">
                         Today
                     </span>
                 </div>
 
-                {messages.map((msg, index) => (
-                    <ChatMessage
-                        key={index}
-                        msg={msg}
-                        isMyMessage={msg.username === username}
-                    />
-                ))}
+                {messages.map((msg, index) => {
+                    const isConsecutive = index > 0 && messages[index - 1].username === msg.username;
+                    const isNextConsecutive = index < messages.length - 1 && messages[index + 1].username === msg.username;
+                    return (
+                        <div key={index} className={isNextConsecutive ? 'mb-1' : 'mb-6'}>
+                            <ChatMessage
+                                msg={msg}
+                                isMyMessage={msg.username === username}
+                                isConsecutive={isConsecutive}
+                            />
+                        </div>
+                    );
+                })}
 
                 <div ref={messagesEndRef} />
             </div>

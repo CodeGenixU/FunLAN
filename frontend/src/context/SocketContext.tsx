@@ -43,7 +43,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             setIsConnecting(false);
         });
 
-        socketInstance.on('connection_established', (data) => {
+        socketInstance.on('user_joined', (data) => {
             if (data.status === 'success') {
                 setIsAuthenticated(true);
                 setIsConnecting(false);

@@ -5,13 +5,17 @@ import { FileMessage } from './FileMessage';
 interface ChatMessageProps {
     msg: any;
     isMyMessage: boolean;
+    isConsecutive?: boolean;
 }
 
-export const ChatMessage = ({ msg, isMyMessage }: ChatMessageProps) => {
+export const ChatMessage = ({ msg, isMyMessage, isConsecutive = false }: ChatMessageProps) => {
+    const isImage = msg.type === 'file' && !!msg.filename.match(/\.(jpeg|jpg|gif|png|webp)$/i);
+    const isMedia = msg.type === 'file' && !!msg.filename.match(/\.(jpeg|jpg|gif|png|webp|mp4|webm|ogg)$/i);
+
     const renderContent = () => {
         if (msg.type === 'file') {
-            if (msg.filename.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
-                return <ImageMessage fileId={msg.file_id} filename={msg.filename} />;
+            if (isImage) {
+                return <ImageMessage fileId={msg.file_id} filename={msg.filename} timestamp={msg.timestamp} />;
             }
             if (msg.filename.match(/\.(mp4|webm|ogg)$/i)) {
                 return <VideoMessage fileId={msg.file_id} />;
@@ -22,13 +26,11 @@ export const ChatMessage = ({ msg, isMyMessage }: ChatMessageProps) => {
         return msg.message || msg.text;
     };
 
-    const isMedia = msg.type === 'file' && msg.filename.match(/\.(jpeg|jpg|gif|png|webp|mp4|webm|ogg)$/i);
-
     return (
         <div className={`flex w-full ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
             <div className="max-w-[75%] ">
-                {/* Show username ONLY for others */}
-                {!isMyMessage && (
+                {/* Show username ONLY for others, and not for consecutive messages */}
+                {!isMyMessage && !isConsecutive && (
                     <span className="text-xs text-muted-foreground ml-2 mb-1 block">
                         {msg.username}
                     </span>
@@ -39,20 +41,21 @@ export const ChatMessage = ({ msg, isMyMessage }: ChatMessageProps) => {
                         text-sm leading-relaxed shadow-sm
                         hover:bg-primary/90 transition duration-200
                         ${isMyMessage
-                            ? 'bg-primary rounded-2xl rounded-br-md'
-                            : 'bg-white/10 backdrop-blur-sm border border-white/5 rounded-2xl rounded-bl-md'}
-                        ${isMedia ? 'p-1' : 'px-4 py-2'}
+                            ? `bg-primary text-primary-foreground rounded-2xl ${isConsecutive ? 'rounded-tr-md rounded-br-md' : 'rounded-br-md'}`
+                            : `bg-white/10 text-foreground backdrop-blur-sm border border-white/5 rounded-2xl ${isConsecutive ? 'rounded-tl-md rounded-bl-md' : 'rounded-bl-md'}`}
+                        ${isMedia && (!isImage) ? 'p-1' : (isImage ? 'p-0.5' : 'px-3 py-1.5')}
                     `}
                 >
-                    {renderContent()}
-                </div>
-
-                {/* Timestamp subtle + aligned */}
-                <div
-                    className={`text-[10px] mt-1 text-muted-foreground ${isMyMessage ? 'text-right mr-1' : 'text-left ml-1'
-                        }`}
-                >
-                    {msg.timestamp}
+                    <div className={`flex items-end flex-wrap ${isImage ? '' : 'gap-2'}`}>
+                        <div className="break-words min-w-0 flex-none w-full sm:w-auto text-white">
+                            {renderContent()}
+                        </div>
+                        {!isImage && (
+                            <div className={`text-[10px] leading-none shrink-0 ${isMyMessage ? 'text-muted-foreground' : 'text-muted-foreground'} ml-auto mb-0.5 mt-1`}>
+                                {msg.timestamp}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
