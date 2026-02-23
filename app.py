@@ -4,6 +4,8 @@ import sqlite3
 import os 
 import uuid
 
+active_users = {}
+
 app = Flask(__name__)
 app.secret_key = "Digital_Sorcerer"
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -88,6 +90,13 @@ def download(filename):
         return jsonify({'status':'error', 'message' : 'Not Authenticated'}), 400
     return send_from_directory(UPLOAD_FOLDER, filename)
 
+@app.route('/active-users', methods = ['GET'])
+def users():
+    if 'user_id' not in session:
+        return jsonify({'status':'error', 'message' : 'Not Authenticated'}), 400
+    data = list(active_users.values())
+    return jsonify({'status':'success', 'data' : data}), 200
+
 @app.route('/signup', methods = ['POST'])
 def signup():
     data = request.get_json()
@@ -105,11 +114,29 @@ def signup():
 
 @socketio.on('connect')
 def handle_connect():
+    global active_users
     if 'user_id' not in session:
         return False
     else:
+
+        session_id = request.sid
+
+        active_users[session_id] = {
+            'user_id': session['user_id'],
+            'username': session['username']
+        }
+
         join_room("global")
-        emit('connection_established', {"status": "success", "username": session['username']}, room="global")
+
+        join_room(f"user:{session['user_id']}")
+
+        emit('user_joined', {
+            "status": "success", 
+            "data": {
+                "user_id": session['user_id'], 
+                "username": session['username']
+            }
+        }, room="global")
 
 @socketio.on('message')
 def handle_message(data):
@@ -119,7 +146,7 @@ def handle_message(data):
         return
     
     data = {
-        "room": "global",
+        "room": data['room'],
         "user_id": session['user_id'],
         "username": session['username'],
         "message": data['message'],
@@ -130,7 +157,14 @@ def handle_message(data):
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    emit('disconnection_established', {"status": "success", "data": "Disconnected from server"})
+    session_id = request.sid
+    if session_id in active_users:
+        del active_users[session_id]
+    emit('disconnection_established', 
+    {"status": "success", "data": {
+        "user_id": session['user_id'], 
+        "username": session['username']
+    }}, to = "global")
 
 if __name__ == '__main__':
     if not os.path.exists('users.db'):
