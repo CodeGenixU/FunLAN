@@ -6,6 +6,8 @@ import { Button } from './Button';
 import { ThemeToggle } from './ThemeToggle';
 import { ColorPicker } from './ColorPicker';
 import { useChat } from '../../context/ChatContext';
+import api from '../../lib/axios';
+import { toast } from 'react-toastify';
 
 interface SidebarProps {
     isCollapsed: boolean;
@@ -206,15 +208,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed })
                             <div className="space-y-4 pt-4 border-t border-white/10 mt-auto">
                                 {!isCollapsed && <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Account</h3>}
 
-                                <Link to="/login" className="block w-full">
-                                    <Button variant="destructive" className={cn(
+                                <Button
+                                    variant="destructive"
+                                    className={cn(
                                         "w-full flex items-center justify-center gap-2 rounded-xl",
                                         isCollapsed && "px-0"
-                                    )}>
-                                        <LogOut size={18} />
-                                        {!isCollapsed && <span>Log Out</span>}
-                                    </Button>
-                                </Link>
+                                    )}
+                                    onClick={async () => {
+                                        try {
+                                            await api.post('/api/logout');
+                                        } catch (e) {
+                                            toast.error("Logout error");
+                                            console.error(e);
+                                        }
+                                        localStorage.removeItem('user_id');
+                                        localStorage.removeItem('username');
+                                        window.location.href = '/login';
+                                    }}
+                                >
+                                    <LogOut size={18} />
+                                    {!isCollapsed && <span>Log Out</span>}
+                                </Button>
                             </div>
                         </div>
                     </div>

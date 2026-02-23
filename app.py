@@ -61,6 +61,12 @@ def auth():
         conn.close()
         return jsonify({'status': 'Invalid Username', 'data' : {'username': username}}), 400
 
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.pop('user_id', None)
+    session.pop('username', None)
+    return jsonify({'status': 'success'}), 200
+
 @app.route("/upload", methods = ['POST'])
 def upload():
     if 'user_id' not in session:

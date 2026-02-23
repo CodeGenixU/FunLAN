@@ -16,7 +16,7 @@ interface ChatRoomProps {
 
 const ChatRoom = ({ roomId, title, subtitle, avatarInitials = '#' }: ChatRoomProps) => {
     const { socket } = useSocket();
-    const { getMessages } = useMessage();
+    const { getMessages, addMessage } = useMessage();
 
     const messages = getMessages(roomId);
 
@@ -49,11 +49,15 @@ const ChatRoom = ({ roomId, title, subtitle, avatarInitials = '#' }: ChatRoomPro
                 formData.append('timestamp', new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
                 try {
-                    await api.post('/api/upload', formData, {
+                    const response = await api.post('/upload', formData, {
                         headers: {
                             'Content-Type': 'multipart/form-data'
                         }
                     });
+                    // Optimistic UI for private chats
+                    if (roomId.startsWith('user:') && response.data.status === 'success') {
+                        addMessage(roomId, { ...response.data.data, type: 'file' });
+                    }
                 } catch (error) {
                     console.error('Error uploading file:', error);
                 }
@@ -67,6 +71,10 @@ const ChatRoom = ({ roomId, title, subtitle, avatarInitials = '#' }: ChatRoomPro
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             };
             socket?.emit('message', messageData);
+
+            if (roomId.startsWith('user:')) {
+                addMessage(roomId, messageData);
+            }
             setInputMessage('');
         }
     };

@@ -39,14 +39,24 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     useEffect(() => {
         if (!socket) return;
 
+        const processMessageRoom = (msgRoom: string, senderId?: string | number) => {
+            const myUserId = localStorage.getItem('user_id');
+            if (myUserId && msgRoom === `user:${myUserId}` && senderId) {
+                // If it's a private message sent TO me, route it to the conversation window of the SENDER
+                return `user:${senderId}`;
+            }
+            return msgRoom;
+        };
+
         const handleMessage = (message: any) => {
-            // Provide a fallback if backend omits room (shouldn't happen with our recent changes)
-            const room = message.room || 'global';
+            let room = message.room || 'global';
+            room = processMessageRoom(room, message.user_id);
             addMessage(room, message);
         };
 
         const handleFile = (fileData: any) => {
-            const room = fileData.room || 'global';
+            let room = fileData.room || 'global';
+            room = processMessageRoom(room, fileData.user_id);
             addMessage(room, { ...fileData, type: 'file' });
         };
 

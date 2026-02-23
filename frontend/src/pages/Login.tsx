@@ -24,6 +24,7 @@ const Login = () => {
             if (response.data.status === 'success') {
                 toast.success('Login Successful!');
                 localStorage.setItem('username', response.data.data.username);
+                localStorage.setItem('user_id', response.data.data.user_id);
                 connectSocket(); // Manually initiate socket connection; AuthRoute will handle redirect once connected
             } else {
                 toast.error('Login Failed: ' + (response.data.message || 'Invalid credentials'));
