@@ -19,7 +19,7 @@ const Signup = () => {
         formData.append('password', password);
 
         try {
-            const response = await api.post('/api/signup', formData);
+            const response = await api.post('/signup', formData);
             if (response.data.status === 'success') {
                 toast.success('Signup Successful! Please login.');
                 navigate('/login');

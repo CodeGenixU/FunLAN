@@ -69,7 +69,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         const loadActiveUsers = async () => {
             try {
-                const response = await api.get('/api/active-users');
+                const response = await api.get('/active-users');
                 if (response.data.status === 'success') {
                     const activeUsers = response.data.data;
                     const myUserId = localStorage.getItem('user_id');
