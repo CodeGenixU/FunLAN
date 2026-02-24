@@ -1,29 +1,33 @@
 from flask import Flask, request, jsonify, session, send_from_directory
 from flask_socketio import SocketIO, emit, join_room, disconnect
-import sqlite3
+from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
 import os 
 import uuid
 
-active_users = {}
+load_dotenv()
 
-app = Flask(__name__)
-app.secret_key = "Digital_Sorcerer"
-socketio = SocketIO(app, cors_allowed_origins="*")
+active_users = {}
 
 UPLOAD_FOLDER = 'uploads'
 
-def Database():
-    conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL)
-    ''')
+DATABASE_URL = f"postgresql+psycopg2://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
+
+app = Flask(__name__)
+
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     
-    conn.commit()
-    conn.close()
+db = SQLAlchemy(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+class users(db.Model):
+    __tablename__ = "users"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password = db.Column(db.String(50), nullable=False)
+
 
 @app.route('/auth', methods = ['POST'])
 def auth():
@@ -37,15 +41,11 @@ def auth():
     if not username or not password:
         return jsonify({"error": "Missing fields"}), 400
     
-    conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
-
-    cursor.execute('SELECT * FROM users WHERE username = ?', (username,)) # , chut gaya tha isliye error aa rha tha
-    user = cursor.fetchone() # Fetch one use kar rahe so tuple hi return hoga
+    user = users.query.filter_by(username=username).first()
     if user:
-        if user[2] != password: # isliye ye karne ka jarurat nhi h (user[0][2] != password)
+        if user.password != password: 
             return jsonify({'status': 'Incorrect Password', 'data' : {'username': username}}), 400
-        user_id = user[0] # and yaha bhi (user[0][0])
+        user_id = user.id 
         
         session['user_id'] = user_id
         session['username'] = username
@@ -58,7 +58,6 @@ def auth():
             }
         })
     else:
-        conn.close()
         return jsonify({'status': 'Invalid Username', 'data' : {'username': username}}), 400
 
 @app.route('/logout', methods=['POST'])
@@ -97,7 +96,7 @@ def download(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
 @app.route('/active-users', methods = ['GET'])
-def users():
+def activeUsers():
     if 'user_id' not in session:
         return jsonify({'status':'error', 'message' : 'Not Authenticated'}), 400
     data = list(active_users.values())
@@ -108,13 +107,8 @@ def signup():
     data = request.get_json()
     username = data['username']
     password = data['password']
-    cred = (username,password)
-    conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
-
-    cursor.execute(f"INSERT INTO users(username,password) values {cred}")
-    conn.commit()
-    conn.close()
+    db.session.add(users(username=username, password=password))
+    db.session.commit()
     return jsonify({'status':'success', 'username' : username}), 200
 
 
@@ -188,8 +182,10 @@ def handle_disconnect():
     }}, to = "global")
 
 if __name__ == '__main__':
-    if not os.path.exists('users.db'):
-        Database()
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)
+
+    with app.app_context():
+        db.create_all()
+
     socketio.run(app, debug=True)
