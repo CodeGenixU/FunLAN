@@ -4,6 +4,8 @@ from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 import os 
 import uuid
+from flask_cors import CORS
+
 
 load_dotenv()
 
@@ -14,6 +16,8 @@ UPLOAD_FOLDER = 'uploads'
 DATABASE_URL = f"postgresql+psycopg2://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
 
 app = Flask(__name__)
+
+CORS(app)
 
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
