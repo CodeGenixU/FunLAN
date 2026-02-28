@@ -32,7 +32,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             socket.disconnect();
         }
 
-        const socketInstance = io('http://localhost:5000', {
+        const socketInstance = io('/socket.io/', {
             withCredentials: true,
             autoConnect: false
         });
