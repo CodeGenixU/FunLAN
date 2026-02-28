@@ -33,7 +33,7 @@ class users(db.Model):
     password = db.Column(db.String(50), nullable=False)
 
 
-@app.route('/auth', methods = ['POST'])
+@app.route('/api/auth', methods = ['POST'])
 def auth():
     data = request.get_json()
     username = data['username']
@@ -64,13 +64,13 @@ def auth():
     else:
         return jsonify({'status': 'Invalid Username', 'data' : {'username': username}}), 400
 
-@app.route('/logout', methods=['POST'])
+@app.route('/api/logout', methods=['POST'])
 def logout():
     session.pop('user_id', None)
     session.pop('username', None)
     return jsonify({'status': 'success'}), 200
 
-@app.route("/upload", methods = ['POST'])
+@app.route('/api/upload', methods = ['POST'])
 def upload():
     if 'user_id' not in session:
         return jsonify({'status':'error', 'message' : 'Not Authenticated'}), 400
@@ -93,20 +93,20 @@ def upload():
     socketio.emit('file', data, to=data['room'],) # TypeError: Server.emit() got an unexpected keyword argument 'broadcast'
     return jsonify({'status':'success', 'data' : data}), 200
 
-@app.route('/download/<filename>', methods = ['GET'])
+@app.route('/api/download/<filename>', methods = ['GET'])
 def download(filename):
     if 'user_id' not in session:
         return jsonify({'status':'error', 'message' : 'Not Authenticated'}), 400
     return send_from_directory(UPLOAD_FOLDER, filename)
 
-@app.route('/active-users', methods = ['GET'])
+@app.route('/api/active-users', methods = ['GET'])
 def activeUsers():
     if 'user_id' not in session:
         return jsonify({'status':'error', 'message' : 'Not Authenticated'}), 400
     data = list(active_users.values())
     return jsonify({'status':'success', 'data' : data}), 200
 
-@app.route('/signup', methods = ['POST'])
+@app.route('/api/signup', methods = ['POST'])
 def signup():
     data = request.get_json()
     username = data['username']
