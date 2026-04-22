@@ -109,3 +109,4 @@ trial.py
 *.db
 frontend/package-lock.json
 uploads/
+flask_session_data

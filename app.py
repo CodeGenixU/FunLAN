@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, session, send_from_directory
 from flask_socketio import SocketIO, emit, join_room, disconnect
+from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 import os 
@@ -17,14 +18,38 @@ DATABASE_URL = f"postgresql+psycopg2://{os.getenv('DB_USER')}:{os.getenv('DB_PAS
 
 app = Flask(__name__)
 
-CORS(app)
+SESSION_DIR = os.path.join(os.getcwd(), 'flask_session_data')
+os.makedirs(SESSION_DIR, exist_ok=True)
+
 
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+app.config["SESSION_FILE_DIR"] = SESSION_DIR
+
+
 db = SQLAlchemy(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+CORS(app)
+Session(app)
+socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False  )
+
+def authenticate():
+    
+    id = session.get('user_id')
+    username = session.get('username')
+
+    if not id or not username:
+        return False
+    return True
+
+@app.before_request
+def before_request():
+    if request.endpoint not in ["login", "singup", "auth"]:
+        if not authenticate():
+            return jsonify({'status': 'error', 'message' : 'Not Authenticated'}), 400
+    return
 
 class users(db.Model):
     __tablename__ = "users"
@@ -38,7 +63,6 @@ def auth():
     data = request.get_json()
     username = data['username']
     password = data['password']
-
     if not data:
         return jsonify({"error": "No data found"}), 400
     
@@ -72,8 +96,6 @@ def logout():
 
 @app.route('/upload', methods = ['POST'])
 def upload():
-    if 'user_id' not in session:
-        return jsonify({'status':'error', 'message' : 'Not Authenticated'}), 400
     if 'file' not in request.files:
         return jsonify({'status':'error', 'message' : 'No file found'}), 400
     file = request.files['file']
@@ -95,14 +117,10 @@ def upload():
 
 @app.route('/download/<filename>', methods = ['GET'])
 def download(filename):
-    if 'user_id' not in session:
-        return jsonify({'status':'error', 'message' : 'Not Authenticated'}), 400
     return send_from_directory(UPLOAD_FOLDER, filename)
 
 @app.route('/active-users', methods = ['GET'])
 def activeUsers():
-    if 'user_id' not in session:
-        return jsonify({'status':'error', 'message' : 'Not Authenticated'}), 400
     data = list(active_users.values())
     return jsonify({'status':'success', 'data' : data}), 200
 
@@ -119,11 +137,11 @@ def signup():
 @socketio.on('connect')
 def handle_connect():
     global active_users
-    if 'user_id' not in session:
+    if not authenticate():
         return False
     else:
 
-        session_id = request.sid
+        session_id = request.cookies.get('session')
 
         active_users[session_id] = {
             'user_id': session['user_id'],
@@ -176,7 +194,7 @@ def handle_typing(data):
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    session_id = request.sid
+    session_id = request.cookies.get('session')
     if session_id in active_users:
         del active_users[session_id]
     emit('disconnection_established', 
