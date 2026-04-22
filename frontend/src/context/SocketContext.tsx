@@ -32,7 +32,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             socket.disconnect();
         }
 
-        const socketInstance = io('/socket.io/', {
+        const socketInstance = io(import.meta.env.VITE_SOCKET_URL, {
             withCredentials: true,
             autoConnect: false
         });
