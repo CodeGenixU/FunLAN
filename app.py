@@ -158,7 +158,7 @@ def handle_connect():
                 "user_id": session['user_id'], 
                 "username": session['username']
             }
-        }, room="global")
+        }, to="global")
 
 @socketio.on('message')
 def handle_message(data):
@@ -175,7 +175,7 @@ def handle_message(data):
         "timestamp": data['timestamp']
     }
     
-    emit('message', data, broadcast=True, room=data['room'])
+    emit('message', data, broadcast=True, to=data['room'])
 
 @socketio.on('typing')
 def handle_typing(data):
@@ -190,7 +190,7 @@ def handle_typing(data):
         'user_id': session['user_id'],
         'username': session['username'],
         'isTyping': is_typing
-    }, room=room, include_self=False)
+    }, to=room, include_self=False)
 
 @socketio.on('disconnect')
 def handle_disconnect():
