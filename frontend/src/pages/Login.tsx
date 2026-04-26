@@ -20,7 +20,7 @@ const Login = () => {
         formData.append('password', password);
 
         try {
-            const response = await api.post('/auth', formData);
+            const response = await api.post('/auth/login', formData);
             if (response.data.status === 'success') {
                 toast.success('Login Successful!');
                 localStorage.setItem('username', response.data.data.username);

@@ -228,7 +228,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed })
                                     )}
                                     onClick={async () => {
                                         try {
-                                            await api.post('/logout');
+                                            await api.post('/auth/logout');
                                         } catch (e) {
                                             toast.error("Logout error");
                                             console.error(e);

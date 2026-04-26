@@ -55,7 +55,7 @@ const ChatRoom = ({ roomId, title, subtitle, avatarInitials = '#' }: ChatRoomPro
                 formData.append('timestamp', new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
                 try {
-                    const response = await api.post('/upload', formData, {
+                    const response = await api.post('/api/upload', formData, {
                         headers: {
                             'Content-Type': 'multipart/form-data'
                         }
