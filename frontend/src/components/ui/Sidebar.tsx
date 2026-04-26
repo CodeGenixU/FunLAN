@@ -6,6 +6,7 @@ import { Button } from './Button';
 import { ThemeToggle } from './ThemeToggle';
 import { ColorPicker } from './ColorPicker';
 import { useChat } from '../../context/ChatContext';
+import { useSocket } from '../../context/SocketContext';
 import api from '../../lib/axios';
 import { toast } from 'react-toastify';
 
@@ -18,6 +19,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed })
     const location = useLocation();
     const [activeTab, setActiveTab] = useState<'chats' | 'settings'>('chats');
     const { commonChat, personalChats, typingUsers } = useChat();
+    const { socket } = useSocket();
 
     return (
         <aside
@@ -233,6 +235,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed })
                                             toast.error("Logout error");
                                             console.error(e);
                                         }
+                                        socket?.disconnect();
                                         localStorage.removeItem('user_id');
                                         localStorage.removeItem('username');
                                         window.location.href = '/login';
