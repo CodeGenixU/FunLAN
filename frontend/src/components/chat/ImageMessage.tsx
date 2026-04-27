@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import api from '../../lib/axios';
 
 interface ImageMessageProps {
     fileId: string;
@@ -10,12 +11,12 @@ interface ImageMessageProps {
 
 export const ImageMessage = ({ fileId, filename, timestamp }: ImageMessageProps) => {
     const [isOpen, setIsOpen] = useState(false);
-    const imageUrl = `/api/download/${fileId}`;
+    const imageUrl = `${api.defaults.baseURL}api/download/${fileId}`;
 
     return (
         <>
             <div
-                className="relative cursor-pointer overflow-hidden rounded-[inherit] max-w-full sm:max-w-xs group"
+                className="relative cursor-pointer overflow-hidden rounded-[inherit] max-w-full sm:max-w-xs group object-cover"
                 onClick={() => setIsOpen(true)}
             >
                 <motion.img
@@ -41,7 +42,7 @@ export const ImageMessage = ({ fileId, filename, timestamp }: ImageMessageProps)
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => setIsOpen(false)}
-                        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+                        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
                     >
                         <motion.button
                             initial={{ opacity: 0, scale: 0.8 }}
@@ -57,11 +58,11 @@ export const ImageMessage = ({ fileId, filename, timestamp }: ImageMessageProps)
                         </motion.button>
 
                         <motion.img
-                            layoutId={`image-${fileId}`}
+                            layoutId={`image-${fileId}-${timestamp}`}
                             transition={{ type: "spring", damping: 25, stiffness: 300 }}
                             src={imageUrl}
                             alt={filename}
-                            className="max-w-full max-h-[90vh] object-contain rounded-md shadow-2xl"
+                            className="max-w-full max-h-[90vh] object-contain rounded-md shadow-2xl z-[100]"
                             onClick={(e) => e.stopPropagation()}
                         />
                     </motion.div>

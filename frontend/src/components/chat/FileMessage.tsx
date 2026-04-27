@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { FileText, Download, Check, Loader2 } from "lucide-react";
+import api from "../../lib/axios";
 
 type Props = {
     fileId: string;
@@ -21,7 +22,7 @@ export const FileMessage = ({ fileId, filename }: Props) => {
         const xhr = new XMLHttpRequest();
         xhrRef.current = xhr;
 
-        xhr.open("GET", `/api/download/${fileId}`, true);
+        xhr.open("GET", `${api.defaults.baseURL}api/download/${fileId}`, true);
         xhr.responseType = "blob";
 
         // progress tracking (this is why we use XHR)
