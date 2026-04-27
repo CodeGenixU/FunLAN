@@ -12,7 +12,7 @@ def before_request():
 
 @api.route('/active-users', methods=['GET'])
 def active_users():
-    data = current_app.extensions['active_users'].get_users()
+    data = [u for u in current_app.extensions['active_users'].get_users()]
     return jsonify({'status': 'success', 'data': data}), 200
 
 @api.route('/upload', methods=['POST'])
@@ -37,8 +37,11 @@ def upload():
     current_app.extensions['socketio'].emit('file', data, to=data['room'])
     return jsonify({'status': 'success', 'data': data}), 200
 
-@api.route('/download/<filename>', methods=['GET'])
+@api.route('/download/<path:filename>', methods=['GET','OPTIONS'])
 def download(filename):
-        if not Path(current_app.config['UPLOAD_FOLDER'] / filename).exists():
-            return jsonify({'status': 'error', 'message': 'File not found'}), 404
-        return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
+    print("Route")
+    if request.method == 'OPTIONS':
+        return "", 200
+    b = Path(current_app.config['UPLOAD_FOLDER'] / filename).exists()
+    print(b)
+    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)

@@ -91,7 +91,7 @@ class Server():
 
         self.server.config["UPLOAD_FOLDER"].mkdir(parents=True, exist_ok=True)
 
-        CORS(self.server)
+        CORS(self.server, supports_credentials=True)
 
         Session(self.server)
 

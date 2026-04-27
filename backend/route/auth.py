@@ -41,15 +41,13 @@ def signup():
     username = data['username']
     password = data['password']
     
-    try:
-        user = get_user(username)
+    user = get_user(username)
         
-        if user:
-            return jsonify({'status': 'Username already exists', 'data' : {'username': username}}), 400
-    except Exception as e:
+    if user:
+        return jsonify({'status': 'Username already exists', 'data' : {'username': username}}), 400
+    else:
         add_user(username, password)
-        
-    return jsonify({'status': 'success', 'username' : username}), 200
+        return jsonify({'status': 'success', 'username' : username}), 200
 
 @auth.route('/logout', methods=['POST'])
 def logout():
