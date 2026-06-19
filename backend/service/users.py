@@ -1,5 +1,5 @@
 from ..database.model import db, users
-from datatime import datetime
+from datetime import datetime
 class ActiveUsers:
     def __init__(self):
         self.users = {}
