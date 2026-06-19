@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from ..service.users import add_user, get_user
+from ..service.users import add_user, get_user, check_user
 
 auth = Blueprint('auth', __name__)
 
@@ -16,15 +16,13 @@ def login():
     if not username or not password:
         return jsonify({"error": "Missing fields"}), 400
     
-    user = get_user(username)
+    user = check_user(username,password)
     
-    if not user:
-        return jsonify({'status': 'Invalid Username', 'data' : {'username': username}}), 400
-    
-    if user.password != password:
-        return jsonify({'status': 'Incorrect Password', 'data' : {'username': username}}), 400
-    
-    id = user.id
+    if user[0] == False:
+        return jsonify({'status': 'Invalid Credentials', 'data' : {'username': username}}), 400
+    elif user[0] == None:
+        return jsonify({'status': 'User is Banned', 'data' : {'username': username}}), 403
+    id = user[1].id
     
     session['user_id'] = id
     session['username'] = username

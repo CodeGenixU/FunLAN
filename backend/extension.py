@@ -57,7 +57,8 @@ class Server():
         self.server.config["SQLALCHEMY_DATABASE_URI"] = config.SQLALCHEMY_DATABASE_URI
         self.server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = config.SQLALCHEMY_TRACK_MODIFICATIONS
         
-        self.db = db.init_app(self.server)
+        db.init_app(self.server)
+        self.db = db
 
         self.BASE_PATH = Path(self.server.instance_path)
         self.BASE_PATH.mkdir(parents=True, exist_ok=True)
@@ -76,7 +77,6 @@ class Server():
             self.SESSION_FILE_DIR_PATH = self.BASE_PATH / config.SESSION_FILE_DIR
             self.server.config["SESSION_FILE_DIR"] = str(self.SESSION_FILE_DIR_PATH)
             self.SESSION_FILE_DIR_PATH.mkdir(parents=True, exist_ok=True)
-
 
         elif self.SESSION_TYPE == 'redis':
             self.server.config["SESSION_REDIS"] = config.SESSION_REDIS 

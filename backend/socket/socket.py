@@ -12,7 +12,7 @@ def authenticate():
     return True
 
 def is_authenticated(sid) -> tuple:
-    data = current_app.extensions['active_users'].get(sid)
+    data = current_app.extensions['active_users'][sid]
     return (True,data) if data else (False,{})
 
 class ChatNamespace(Namespace):
